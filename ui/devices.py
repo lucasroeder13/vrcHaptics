@@ -33,7 +33,7 @@ class DevicesTab(ttk.Frame):
         
         # Connect/Test Button
         if hasattr(module, 'run'):
-            btn_connect = ttk.Button(header_frame, text="Open Interface / Test", command=lambda m=module: self._on_connect(m))
+            btn_connect = ttk.Button(header_frame, text="Open Interface", command=lambda m=module: self._on_connect(m))
             btn_connect.pack(side=tk.LEFT, padx=5)
 
         # Scan Devices Button
@@ -51,7 +51,7 @@ class DevicesTab(ttk.Frame):
         
         # Initial population if devices already exist
         if hasattr(module, 'devices'):
-            self._render_devices(module.devices, device_container)
+            self._render_devices(module.devices, device_container, module)
 
     def _on_scan(self, module, section_frame):
         try:
@@ -59,11 +59,11 @@ class DevicesTab(ttk.Frame):
             devices = module.scan()
             # Update UI
             if hasattr(section_frame, 'device_container'):
-                self._render_devices(devices, section_frame.device_container)
+                self._render_devices(devices, section_frame.device_container, module)
         except Exception as e:
             messagebox.showerror("Error", f"Scan failed: {e}")
 
-    def _render_devices(self, devices, container):
+    def _render_devices(self, devices, container, module=None):
         # Clear existing
         for widget in container.winfo_children():
             widget.destroy()
@@ -75,23 +75,27 @@ class DevicesTab(ttk.Frame):
         # Headers
         header = ttk.Frame(container)
         header.pack(fill=tk.X, padx=20)
-        ttk.Label(header, text="ID", width=45, font=("Arial", 9, "bold")).pack(side=tk.LEFT)
-        ttk.Label(header, text="Name", width=20, font=("Arial", 9, "bold")).pack(side=tk.LEFT)
+        ttk.Label(header, text="ID", width=15, font=("Arial", 9, "bold")).pack(side=tk.LEFT)
+        ttk.Label(header, text="Name", width=25, font=("Arial", 9, "bold")).pack(side=tk.LEFT)
         ttk.Label(header, text="Status", width=15, font=("Arial", 9, "bold")).pack(side=tk.LEFT)
+        ttk.Label(header, text="Action", width=10, font=("Arial", 9, "bold")).pack(side=tk.LEFT)
 
         # Rows
         for dev in devices:
             row = ttk.Frame(container)
             row.pack(fill=tk.X, padx=20, pady=1)
             
-            # Assuming dev is a dict for now: {'id': '...', 'name': '...', 'info': '...'}
             dev_id = dev.get('id', 'Unknown')
             dev_name = dev.get('name', 'Unknown')
             dev_status = dev.get('status', '-')
             
-            ttk.Label(row, text=dev_id, width=45).pack(side=tk.LEFT)
-            ttk.Label(row, text=dev_name, width=20).pack(side=tk.LEFT)
+            ttk.Label(row, text=dev_id, width=15).pack(side=tk.LEFT)
+            ttk.Label(row, text=dev_name, width=25).pack(side=tk.LEFT)
             ttk.Label(row, text=dev_status, width=15).pack(side=tk.LEFT)
+            
+            if module and hasattr(module, 'test_device'):
+                 ttk.Button(row, text="Test", width=6, 
+                            command=lambda m=module, d=dev_id: m.test_device(d)).pack(side=tk.LEFT)
 
     def _on_connect(self, module):
         try:

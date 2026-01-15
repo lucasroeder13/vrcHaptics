@@ -18,4 +18,5 @@ class Binding(BaseModel):
     output_min: float = 0.0
     output_max: float = 1.0
     curve_type: Literal["linear", "exponential", "logarithmic", "threshold"] = "linear"
+    is_continuous: bool = False
 

@@ -20,9 +20,12 @@ class MappingsTab(ttk.Frame):
 
     def load_data(self, bindings_data):
         self.bindings = []
-        for b_dict in bindings_data:
+        for item in bindings_data:
             try:
-                self.bindings.append(Binding(**b_dict))
+                if isinstance(item, dict):
+                    self.bindings.append(Binding(**item))
+                elif isinstance(item, Binding):
+                    self.bindings.append(item)
             except Exception as e:
                 print(f"Skipping invalid binding: {e}")
         self._refresh_list()
@@ -47,7 +50,7 @@ class MappingsTab(ttk.Frame):
         # Buttons
         btn_frame = ttk.Frame(left_frame)
         btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(btn_frame, text="New Mapping", command=self._new_binding).pack(side=tk.LEFT, expand=True, fill=tk.X)
+        ttk.Button(btn_frame, text="Add Mapping", command=self._new_binding).pack(side=tk.LEFT, expand=True, fill=tk.X)
         ttk.Button(btn_frame, text="Delete", command=self._delete_binding).pack(side=tk.RIGHT, expand=True, fill=tk.X)
         
         paned.add(left_frame, minsize=200)
@@ -129,6 +132,10 @@ class MappingsTab(ttk.Frame):
         ttk.Label(entry_frame_out, text=" -> ").pack(side=tk.LEFT)
         ttk.Entry(entry_frame_out, textvariable=self.output_max_var, width=8).pack(side=tk.LEFT)
 
+        # Continuous Mode
+        self.continuous_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(self.mapping_frame, text="Continuous (Hold while active)", variable=self.continuous_var).grid(row=3, column=0, columnspan=2, sticky="w", pady=5)
+
         # Curve Type
         ttk.Label(self.mapping_frame, text="Curve Type:").grid(row=2, column=0, sticky="w", pady=5)
         self.curve_var = tk.StringVar(value="linear")
@@ -172,9 +179,24 @@ class MappingsTab(ttk.Frame):
         self.device_combobox['values'] = device_list
 
     def _new_binding(self):
-        self.selected_binding_index = None
+        # Create a placeholder binding
+        new_b = Binding(
+            contact_id="?", contact_name="<Select Contact>",
+            module_name="?",
+            device_id="?", device_name="<Select Device>",
+            reaction_type="vibrate",
+            intensity=1.0, duration=0.5
+        )
+        self.bindings.append(new_b)
+        self._refresh_list()
+        
+        # Select the new item
+        last_idx = len(self.bindings) - 1
         self.bindings_listbox.selection_clear(0, tk.END)
-        self._clear_form()
+        self.bindings_listbox.selection_set(last_idx)
+        self.bindings_listbox.event_generate("<<ListboxSelect>>")
+        
+        self._notify_change()
 
     def _clear_form(self):
         self.contact_combobox.set('')
@@ -189,6 +211,7 @@ class MappingsTab(ttk.Frame):
         self.output_min_var.set(0.0)
         self.output_max_var.set(1.0)
         self.curve_var.set('linear')
+        self.continuous_var.set(False)
         self._toggle_mapping_fields()
 
     def _on_select(self, event):
@@ -215,6 +238,7 @@ class MappingsTab(ttk.Frame):
         self.output_min_var.set(getattr(binding, 'output_min', 0.0))
         self.output_max_var.set(getattr(binding, 'output_max', 1.0))
         self.curve_var.set(getattr(binding, 'curve_type', 'linear'))
+        self.continuous_var.set(getattr(binding, 'is_continuous', False))
         self._toggle_mapping_fields()
 
     def _save_binding(self):
@@ -262,7 +286,8 @@ class MappingsTab(ttk.Frame):
             input_max=self.input_max_var.get(),
             output_min=self.output_min_var.get(),
             output_max=self.output_max_var.get(),
-            curve_type=self.curve_var.get()
+            curve_type=self.curve_var.get(),
+            is_continuous=self.continuous_var.get()
         )
 
         if self.selected_binding_index is not None:
@@ -279,10 +304,12 @@ class MappingsTab(ttk.Frame):
         sel = self.bindings_listbox.curselection()
         if not sel:
             return
-        del self.bindings[sel[0]]
-        self._refresh_list()
-        self._new_binding()
-        self._notify_change()
+        
+        if messagebox.askyesno("Confirm", "Delete selected mapping?"):
+            del self.bindings[sel[0]]
+            self._refresh_list()
+            self._new_binding()
+            self._notify_change()
 
     def _refresh_list(self):
         self.bindings_listbox.delete(0, tk.END)

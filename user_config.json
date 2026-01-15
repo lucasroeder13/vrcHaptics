@@ -5,25 +5,69 @@
             "id": "new_id",
             "type": 0,
             "osc_path": "/avatar/parameters/test",
-            "input_type": "bool"
+            "input_type": "float",
+            "cooldown": 0.0
+        },
+        {
+            "name": "New Contact",
+            "id": "new_id_1",
+            "type": 0,
+            "osc_path": "",
+            "input_type": "bool",
+            "cooldown": 0.0
         }
     ],
     "bindings": [
         {
             "contact_id": "new_id",
             "contact_name": "New Contact",
-            "module_name": "OpenShock",
-            "device_id": "019b9e30-2318-7ec7-b0b5-94531c2b19ad",
-            "device_name": "New Shocker 2026-01-08T15:18:10.716Z",
-            "reaction_type": "shock",
+            "module_name": "Intiface",
+            "device_id": "0",
+            "device_name": "Satisfyer Deep Diver",
+            "reaction_type": "vibrate",
             "intensity": 1.0,
-            "duration": 0.3,
+            "duration": 1.0,
             "use_mapping": true,
             "input_min": 0.0,
             "input_max": 1.0,
+            "output_min": 0.2,
+            "output_max": 0.5,
+            "curve_type": "linear",
+            "is_continuous": true
+        },
+        {
+            "contact_id": "new_id_1",
+            "contact_name": "New Contact",
+            "module_name": "OpenShock",
+            "device_id": "019b9e30-2318-7ec7-b0b5-94531c2b19ad",
+            "device_name": "New Shocker 2026-01-08T15:18:10.716Z",
+            "reaction_type": "vibrate",
+            "intensity": 1.0,
+            "duration": 0.5,
+            "use_mapping": false,
+            "input_min": 0.0,
+            "input_max": 1.0,
             "output_min": 0.0,
-            "output_max": 0.4,
-            "curve_type": "linear"
+            "output_max": 1.0,
+            "curve_type": "linear",
+            "is_continuous": false
+        },
+        {
+            "contact_id": "?",
+            "contact_name": "<Select Contact>",
+            "module_name": "?",
+            "device_id": "?",
+            "device_name": "<Select Device>",
+            "reaction_type": "vibrate",
+            "intensity": 1.0,
+            "duration": 0.5,
+            "use_mapping": false,
+            "input_min": 0.0,
+            "input_max": 1.0,
+            "output_min": 0.0,
+            "output_max": 1.0,
+            "curve_type": "linear",
+            "is_continuous": false
         }
     ],
     "modules": {

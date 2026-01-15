@@ -1,5 +1,6 @@
 from typing import List, Dict, Any, Optional
 import math
+import time
 from schemas.bindings import Binding
 from schemas.contacts import Contact
 
@@ -8,6 +9,15 @@ class OSCHandler:
         self.loaded_modules = loaded_modules
         self.contacts = contacts
         self.bindings = bindings
+        self.contact_states = {} # {contact_id: {'last_trigger': float, 'last_val': Any}}
+        
+        # Initialize thread pool for async execution
+        import concurrent.futures
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
+
+    def shutdown(self):
+        if self.executor:
+            self.executor.shutdown(wait=False)
 
     def update_config(self, contacts: List[Contact], bindings: List[Binding]):
         self.contacts = contacts
@@ -34,11 +44,55 @@ class OSCHandler:
             # print(f"Unmapped OSC address: {address}")
             return
 
+        # Handle Cooldown
+        current_time = time.time()
+        c_state = self.contact_states.get(matched_contact.id, {'last_trigger': 0, 'last_val': None})
+        
+        # Debounce / Cooldown Logic
+        if matched_contact.cooldown > 0:
+            if current_time - c_state['last_trigger'] < matched_contact.cooldown:
+                # Still in cooldown
+                # Exception: unless it's a "stop" signal (0 or False) we might want to let it through?
+                # For simplicity, strict cooldown on start. 
+                # But we need to allow stopping if continuous.
+                is_stop_signal = (isinstance(raw_value, bool) and not raw_value) or (isinstance(raw_value, (int, float)) and raw_value == 0)
+                if not is_stop_signal:
+                    return
+
         # Find bindings associated with this contact
         active_bindings = [b for b in self.bindings if b.contact_id == matched_contact.id]
         
+        should_update_trigger_time = False
+
         for binding in active_bindings:
-            self._trigger_binding(binding, raw_value)
+            # Logic for Continuous vs Pulse
+            if binding.is_continuous:
+                 # Always trigger updates, module handles smoothing/throttling
+                 self.executor.submit(self._trigger_binding, binding, raw_value)
+                 should_update_trigger_time = True
+            else:
+                 # Pulse Mode: Only trigger on "rising edge" or significant activation
+                 # Simple boolean rising edge
+                 if isinstance(raw_value, bool) and raw_value and not c_state.get('last_val'):
+                     self.executor.submit(self._trigger_binding, binding, raw_value)
+                     should_update_trigger_time = True
+                 # Float threshold logic could go here (e.g. if val > 0.5 and last_val < 0.5)
+                 elif isinstance(raw_value, (int, float)):
+                     # For floats, we treat > 0 as "active".
+                     # Trigger if it wasn't active before, OR if val varies significantly?
+                     # Standard "Event" usually means 0->NZ transition.
+                     prev = float(c_state.get('last_val') or 0)
+                     curr = float(raw_value)
+                     if curr > 0 and prev == 0:
+                         self.executor.submit(self._trigger_binding, binding, raw_value)
+                         should_update_trigger_time = True
+
+        # Update State
+        if should_update_trigger_time:
+            c_state['last_trigger'] = current_time
+            
+        c_state['last_val'] = raw_value
+        self.contact_states[matched_contact.id] = c_state
 
     def _find_contact(self, address: str) -> Optional[Contact]:
         for contact in self.contacts:

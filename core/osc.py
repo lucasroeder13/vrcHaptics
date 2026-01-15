@@ -22,6 +22,6 @@ class osc:
 
     def start_listener(self):
         self.disp = Dispatcher()
-        self.disp.map("/avatar/parameters/*", osc_handler.OSCHandler.map_message) #TODO: Add handler
+        self.disp.map("/avatar/parameters/*", osc_handler.OSCHandler.map_message) 
         self.server = BlockingOSCUDPServer(("127.0.0.1", 9002), self.disp)
         self.server.serve_forever()

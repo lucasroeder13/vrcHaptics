@@ -8,6 +8,7 @@ class Contact(BaseModel):
     type: int
     osc_path: Optional[str] = None
     input_type: Literal["bool", "int", "float"] = "float"
+    cooldown: float = 0.0
 
 
 class EventContact(BaseModel):

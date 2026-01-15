@@ -24,7 +24,7 @@ class ConfigManager:
             return {"contacts": [], "bindings": []}
 
     @staticmethod
-    def save_config(contacts: List[Contact], bindings: List[Binding]):
+    def save_config(contacts: List[Contact] = None, bindings: List[Binding] = None, app_settings: Dict[str, Any] = None):
         # Load existing manually to preserve other keys (like "modules")
         current_data = {}
         if os.path.exists(CONFIG_FILE):
@@ -34,8 +34,14 @@ class ConfigManager:
              except:
                  pass
 
-        current_data["contacts"] = [c.model_dump() for c in contacts]
-        current_data["bindings"] = [b.model_dump() for b in bindings]
+        if contacts is not None:
+            current_data["contacts"] = [c.model_dump() for c in contacts]
+        
+        if bindings is not None:
+            current_data["bindings"] = [b.model_dump() for b in bindings]
+        
+        if app_settings is not None:
+            current_data["app_settings"] = app_settings
         
         try:
             with open(CONFIG_FILE, 'w') as f:
@@ -43,6 +49,41 @@ class ConfigManager:
             print("Config saved.")
         except Exception as e:
             print(f"Error saving config: {e}")
+
+    @staticmethod
+    def get_app_settings() -> Dict[str, Any]:
+        data = ConfigManager.load_config()
+        return data.get("app_settings", {"osc_port": 9001})
+
+    @staticmethod
+    def export_config(filepath: str, contacts: List[Contact], bindings: List[Binding]):
+        if not filepath:
+            return
+        
+        data = {
+            "contacts": [c.model_dump() for c in contacts],
+            "bindings": [b.model_dump() for b in bindings],
+            # We could include modules config here too if requested, but for now just contacts/bindings
+        }
+        try:
+            with open(filepath, 'w') as f:
+                json.dump(data, f, indent=4)
+            print(f"Config exported to {filepath}")
+        except Exception as e:
+            print(f"Error exporting config: {e}")
+
+    @staticmethod
+    def import_config(filepath: str) -> Dict[str, Any]:
+        if not os.path.exists(filepath):
+            return {}
+            
+        try:
+            with open(filepath, 'r') as f:
+                data = json.load(f)
+            return data
+        except Exception as e:
+            print(f"Error importing config: {e}")
+            return {}
 
     @staticmethod
     def get_module_config(module_name: str) -> Dict[str, Any]:
