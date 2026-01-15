@@ -8,21 +8,13 @@ Repository: [https://github.com/lucasroeder13/vrcHaptics](https://github.com/luc
 
 ## Features
 
-*   **Modular Architecture**: Easily extensible plugin system. Supports Intiface, Lovense, and OpenShock out of the box.
+*   **Modular Architecture**: Easily extensible plugin system.
 *   **User-Friendly GUI**: Built with Tkinter for zero-dependency native look.
     *   **Visualizer**: Real-time bars showing active OSC parameter values.
     *   **OSC Finder**: Built-in tool to scan and detect avatar parameters automatically.
     *   **Mapping Editor**: Bind specific avatar parameters to device actions with custom intensity curves.
 *   **Performance**: Multithreaded OSC sniffing and UI buffering to ensure low latency and responsive controls.
 *   **Live Configuration**: Add contacts and change mappings on the fly without restarting the application.
-
-## Supported Modules
-
-The system automatically loads device handlers from the `modules/` directory:
-
-*   **Intiface / Buttplug.io**: Universal support for hundreds of sex toys.
-*   **Lovense**: Direct control for Lovense devices.
-*   **OpenShock**: Support for electrical stimulation devices via OpenShock.
 
 ## Installation
 
@@ -84,4 +76,4 @@ To add support for a new hardware interface:
 
 ## License
 
-[MIT License](LICENSE) (or whichever license you prefer)
+[MIT License](LICENSE) 
